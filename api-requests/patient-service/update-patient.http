@@ -1,0 +1,10 @@
+### Create new patient
+PUT http://localhost:4000/api/v1/patients/d09edf88-5ab5-45de-81d5-91083523eb83
+Content-Type: application/json
+
+{
+  "name": "Johny",
+  "email": "john@gmail.com",
+  "address": "TP HCM",
+  "dateOfBirth": "2025-01-01"
+}
