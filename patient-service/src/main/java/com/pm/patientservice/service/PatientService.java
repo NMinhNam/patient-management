@@ -4,6 +4,7 @@ import com.pm.patientservice.dto.PatientRequestDTO;
 import com.pm.patientservice.dto.PatientResponseDTO;
 import com.pm.patientservice.exception.AppException;
 import com.pm.patientservice.exception.ErrorCode;
+import com.pm.patientservice.grpc.BillingServiceGrpcClient;
 import com.pm.patientservice.mapper.PatientMapper;
 import com.pm.patientservice.model.Patient;
 import com.pm.patientservice.repository.PatientRepository;
@@ -19,8 +20,11 @@ public class PatientService {
 
     private final PatientRepository patientRepository;
 
-    public PatientService(PatientRepository patientRepository) {
+    private final BillingServiceGrpcClient billingServiceGrpcClient;
+
+    public PatientService(PatientRepository patientRepository, BillingServiceGrpcClient billingServiceGrpcClient) {
         this.patientRepository = patientRepository;
+        this.billingServiceGrpcClient = billingServiceGrpcClient;
     }
 
     public List<PatientResponseDTO> getAllPatients() {
@@ -40,11 +44,17 @@ public class PatientService {
             throw new AppException(ErrorCode.EMAIL_ALREADY_EXIST, requestDTO.getEmail());
         }
 
-        Patient patient = PatientMapper.toModel(requestDTO);
+        Patient newPatient = patientRepository.save(
+                PatientMapper.toModel(requestDTO)
+        );
 
-        patientRepository.save(patient);
+        billingServiceGrpcClient.createBillingAccount(
+                newPatient.getId().toString(),
+                newPatient.getName(),
+                newPatient.getEmail()
+        );
 
-        return PatientMapper.toDTO(patient);
+        return PatientMapper.toDTO(newPatient);
     }
 
     public PatientResponseDTO updatePatient(UUID id, PatientRequestDTO requestDTO) {
